@@ -1,11 +1,11 @@
 import tensorflow as tf
 from keras import Sequential
-from keras.layers import Dense, Flatten, Reshape, Conv2D
+from keras.layers import Dense, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPool2D, UpSampling2D
 from math import exp, sqrt
 
 class VAE1(tf.keras.Model):
-    def __init__(self, input_size, latent_size=15):
-        super(VAE, self).__init__()
+    def __init__(self, input_size, latent_size=1024):
+        # super(VAE, self).__init__()
         # 1. Encoder
         # 2. Latent Distribution, which includes: Mean Vector & Standard Deviation Vector
         # 3. Sampled Latent Representation
@@ -15,9 +15,43 @@ class VAE1(tf.keras.Model):
         self.hidden_dim = 512  # H_d
         self.encoder = Sequential(
             [
-                Flatten(),
-                Conv2D(32, kernel_size=3, strides=2, activation='relu'),
+                Conv2D(64, 3, 1, padding="same",
+                   activation="relu", name="block1_conv1"),
+                Conv2D(64, 3, 1, padding="same",
+                    activation="relu", name="block1_conv2"),
+                MaxPool2D(2, name="block1_pool"),
+                # Block 2
+                Conv2D(128, 3, 1, padding="same",
+                    activation="relu", name="block2_conv1"),
+                Conv2D(128, 3, 1, padding="same",
+                    activation="relu", name="block2_conv2"),
+                MaxPool2D(2, name="block2_pool"),
+                # Block 3
+                Conv2D(256, 3, 1, padding="same",
+                    activation="relu", name="block3_conv1"),
+                Conv2D(256, 3, 1, padding="same",
+                    activation="relu", name="block3_conv2"),
+                Conv2D(256, 3, 1, padding="same",
+                    activation="relu", name="block3_conv3"),
+                MaxPool2D(2, name="block3_pool"),
+                # Block 4
+                Conv2D(512, 3, 1, padding="same",
+                    activation="relu", name="block4_conv1"),
+                Conv2D(512, 3, 1, padding="same",
+                    activation="relu", name="block4_conv2"),
+                Conv2D(512, 3, 1, padding="same",
+                    activation="relu", name="block4_conv3"),
+                MaxPool2D(2, name="block4_pool"),
+                # Block 5
+                Conv2D(512, 3, 1, padding="same",
+                    activation="relu", name="block5_conv1"),
+                Conv2D(512, 3, 1, padding="same",
+                    activation="relu", name="block5_conv2"),
+                Conv2D(512, 3, 1, padding="same",
+                    activation="relu", name="block5_conv3"),
+                MaxPool2D(2, name="block5_pool"),
 
+                Flatten(),
                 Dense(self.hidden_dim, activation='relu'),
                 Dense(self.hidden_dim, activation='relu'),
                 Dense(self.hidden_dim, activation='relu'),
@@ -29,12 +63,41 @@ class VAE1(tf.keras.Model):
         self.logvar_layer = Dense(self.latent_size)
 
         self.decoder = Sequential([
+            # Decoder Block1
+            Reshape((1, 1, self.latent_size)),
+            Conv2DTranspose(512, 3, 1, padding="same", activation="relu", name="dblock1_conv1"),
+            Conv2DTranspose(512, 3, 1, padding="same", activation="relu", name="dblock1_conv2"),
+            Conv2DTranspose(512, 3, 1, padding="same", activation="relu", name="dblock1_conv3"),
+            UpSampling2D(2, name="dblock1_upsample"),
+
+            # Decoder Block2
+            Conv2DTranspose(512, 3, 1, padding="same", activation="relu", name="dblock2_conv1"),
+            Conv2DTranspose(512, 3, 1, padding="same", activation="relu", name="dblock2_conv2"),
+            Conv2DTranspose(512, 3, 1, padding="same", activation="relu", name="dblock2_conv3"),
+            UpSampling2D(2, name="dblock2_upsample"),
+
+            # Decoder Block3
+            Conv2DTranspose(256, 3, 1, padding="same", activation="relu", name="dblock3_conv1"),
+            Conv2DTranspose(256, 3, 1, padding="same", activation="relu", name="dblock3_conv2"),
+            Conv2DTranspose(256, 3, 1, padding="same", activation="relu", name="dblock3_conv3"),
+            UpSampling2D(2, name="dblock3_upsample"),
+
+            # Decoder Block4
+            Conv2DTranspose(128, 3, 1, padding="same", activation="relu", name="dblock4_conv1"),
+            Conv2DTranspose(128, 3, 1, padding="same", activation="relu", name="dblock4_conv2"),
+            UpSampling2D(2, name="dblock4_upsample"),
+
+            # Decoder Block5
+            Conv2DTranspose(64, 3, 1, padding="same", activation="relu", name="dblock5_conv1"),
+            Conv2DTranspose(64, 3, 1, padding="same", activation="relu", name="dblock5_conv2"),
+            UpSampling2D(2, name="dblock5_upsample"),
+
             Dense(self.hidden_dim, activation='relu'),
             Dense(self.hidden_dim, activation='relu'),
             Dense(self.hidden_dim, activation='relu'),
             Dense(self.input_size, activation='sigmoid'),
             # make one layer that reshapes to MNIST (1, 28, 28)
-            Reshape((1, 28, 28))
+            Reshape((1, 512, 512))
             # Reshape((-1, 28, 28))
         ])
 
@@ -56,12 +119,18 @@ class VAE1(tf.keras.Model):
         logvar = self.logvar_layer(x_hat)
         z = reparametrize(mu, logvar)
         x_hat = self.decoder(z)
+        ############################################################################################
+        # TODO: Implement the forward pass by following these steps                                #
+        # (1) Pass the input batch through the encoder model to get posterior mu and logvariance   #
+        # (2) Reparametrize to compute  the latent vector z                                        #
+        # (3) Pass z through the decoder to resconstruct x                                         #
+        ############################################################################################
         return x_hat, mu, logvar
 
 
 class CVAE1(tf.keras.Model):
     def __init__(self, input_size, num_classes=10, latent_size=15):
-        super(CVAE, self).__init__()
+        # super(CVAE, self).__init__()
         self.input_size = input_size  # H*W
         self.latent_size = latent_size  # Z
         self.num_classes = num_classes  # C
