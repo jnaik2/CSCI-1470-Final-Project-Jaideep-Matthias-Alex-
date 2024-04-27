@@ -64,6 +64,7 @@ class VAE1(tf.keras.Model):
 
         self.decoder = Sequential([
             # Decoder Block1
+            Reshape((1, 1, self.latent_size)),
             Conv2DTranspose(512, 3, 1, padding="same", activation="relu", name="dblock1_conv1"),
             Conv2DTranspose(512, 3, 1, padding="same", activation="relu", name="dblock1_conv2"),
             Conv2DTranspose(512, 3, 1, padding="same", activation="relu", name="dblock1_conv3"),
