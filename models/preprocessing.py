@@ -6,7 +6,7 @@ from synthesize import synthesize_image, pil_to_np
 from PIL import Image
 
 
-def load_and_preprocess_images(folder_path, target_size=(256, 256), normalize=True, test_size=0.2):
+def load_and_preprocess_images(folder_path, target_size=(32, 32), normalize=True, test_size=0.2):
 
     synthetic_images = []
     clean_images = []
@@ -47,7 +47,7 @@ def load_and_preprocess_images(folder_path, target_size=(256, 256), normalize=Tr
         # cv2.imshow('synthetic image', syn_img)
         # cv2.waitKey(0)
         i+=1
-        if i == 20:
+        if i == 100:
             break
 
     clean_images = np.array(clean_images)

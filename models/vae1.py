@@ -1,6 +1,6 @@
 import tensorflow as tf
 from keras import Sequential
-from keras.layers import Dense, Flatten, Reshape, Conv2D
+from keras.layers import Dense, Flatten, Reshape
 from math import exp, sqrt
 
 class VAE1(tf.keras.Model):
@@ -12,7 +12,7 @@ class VAE1(tf.keras.Model):
         # 4. Decoder
         self.input_size = input_size*3  # H*W (28 * 28)
         self.latent_size = latent_size  # Z
-        self.hidden_dim = 512  # H_d
+        self.hidden_dim = 1024  # H_d
         self.encoder = Sequential(
             [
                 Flatten(),
@@ -33,7 +33,7 @@ class VAE1(tf.keras.Model):
             Dense(self.hidden_dim, activation='relu'),
             Dense(self.input_size, activation='sigmoid'),
             # make one layer that reshapes to MNIST (1, 28, 28)
-            Reshape((256, 256, 3))
+            Reshape((32, 32, 3))
             # Reshape((-1, 28, 28))
         ])
 
@@ -57,6 +57,13 @@ class VAE1(tf.keras.Model):
         x_hat = self.decoder(z)
         return x_hat, mu, logvar
     
+    def encode(self, x):
+        x_hat = self.encoder(x)
+        mu = self.mu_layer(x_hat)
+        logvar = self.logvar_layer(x_hat)
+        z = reparametrize(mu, logvar)
+        return z
+    
     def loss_function(self, x_hat, x, mu, logvar):
         """
         Computes the negative variational lower bound loss term of the VAE (refer to formulation in notebook).
@@ -74,7 +81,7 @@ class VAE1(tf.keras.Model):
         # find each loss
         rec_loss = bce_function(x_hat, x)
         kl_loss = -0.5 * tf.reduce_sum(1 + logvar - tf.square(mu) - tf.exp(logvar))
-        loss = tf.reduce_mean(rec_loss + kl_loss)
+        loss = (rec_loss + kl_loss)/x.shape[0]
         return loss
     
 def reparametrize(mu, logvar):

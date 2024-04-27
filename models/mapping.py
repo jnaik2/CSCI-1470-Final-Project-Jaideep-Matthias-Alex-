@@ -49,7 +49,7 @@ class Translation(tf.keras.Model):
         """
         # find each loss
         # what is the loss function here?
-        return tf.keras.losses.MSE(latent_target, latent_result)
+        return tf.reduce_mean(tf.keras.losses.MSE(latent_target, latent_result))
 
 
 def bce_function(x_hat, x):
