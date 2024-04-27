@@ -50,11 +50,11 @@ def load_and_preprocess_images(folder_path, target_size=(256, 256), normalize=Tr
     clean_images = np.array(clean_images)
     synthetic_images = np.array(synthetic_images)
 
-    X_train1, X_val1 = train_test_split(synthetic_images, test_size=test_size)
+    X_train, X_val, y_train, y_val = train_test_split(synthetic_images, clean_images, test_size=test_size)
 
-    X_train2, X_val2 = train_test_split(clean_images, test_size=test_size)
+    # X_train2, X_val2 = train_test_split(clean_images, test_size=test_size)
 
-    return (X_train1, X_val1), (X_train2, X_val2)
+    return (X_train, X_val), (y_train, y_val)
 
 
 if __name__ == "__main__":

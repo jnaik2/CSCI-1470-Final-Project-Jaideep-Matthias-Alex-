@@ -9,7 +9,7 @@ import tensorflow as tf
 # from math import sigmoid
 from tqdm import tqdm
 
-from vae import VAE, CVAE, reparametrize, loss_function
+from vae1 import VAE, CVAE, reparametrize, loss_function
 
 
 def parseArguments():
