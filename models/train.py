@@ -1,5 +1,4 @@
-from ..preprocessing import load_and_preprocess_images
-import argparse
+from preprocessing import load_and_preprocess_images
 from vae1 import VAE1
 from mapping import Translation
 import tensorflow as tf
