@@ -1,7 +1,20 @@
 from ..preprocessing import load_and_preprocess_images
+import argparse
 from vae1 import VAE1
 from mapping import Translation
 import tensorflow as tf
+
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--is_cvae", action="store_true")
+    parser.add_argument("--load_weights", action="store_true")
+    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--num_epochs", type=int, default=10)
+    parser.add_argument("--latent_size", type=int, default=15)
+    parser.add_argument("--input_size", type=int, default=28 * 28)
+    parser.add_argument("--learning_rate", type=float, default=1e-3)
+    args = parser.parse_args()
+    return args
 
 def train_vae_epoch(model, dataset, args):
     """
@@ -74,6 +87,9 @@ def main(args):
     #Train Translation
     train_translation(Translation_model, VAE1_model, VAE2_model, synthetic_train, clean_train, args)
 
+if __name__ == "__main__":
+    args = parseArguments()
+    main(args)
 
     
 
