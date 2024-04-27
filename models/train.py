@@ -10,8 +10,8 @@ def parseArguments():
     parser.add_argument("--load_weights", action="store_true")
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--num_epochs", type=int, default=10)
-    parser.add_argument("--latent_size", type=int, default=15)
-    parser.add_argument("--input_size", type=int, default=28 * 28)
+    parser.add_argument("--latent_size", type=int, default=1024)
+    parser.add_argument("--input_size", type=int, default= 256 * 256)
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     args = parser.parse_args()
     return args
