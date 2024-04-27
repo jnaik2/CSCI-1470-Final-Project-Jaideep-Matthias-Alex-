@@ -2,6 +2,7 @@ from preprocessing import load_and_preprocess_images
 from vae1 import VAE1
 from mapping import Translation
 import tensorflow as tf
+import argparse
 
 def parseArguments():
     parser = argparse.ArgumentParser()
@@ -43,8 +44,8 @@ def train_vae_epoch(model, dataset, args):
 
 def train_vae(model, train_loader, args):
     for epoch_id in range(args.num_epochs):
-        total_loss = train_vae(model, train_loader, args, is_cvae=args.is_cvae)
-        print(total_loss)
+        total_loss = train_vae_epoch(model, train_loader, args)
+        # print(total_loss)
         print(f"Train Epoch: {epoch_id} \tLoss: {total_loss / len(train_loader):.6f}")
 
 def train_translation_epoch(translation_model, vae1_model, vae2_model, zipped_data, args):
@@ -69,7 +70,7 @@ def train_translation(translation_model, vae1_model, vae2_model, synthetic_train
 
 
 def main(args):
-    folder_path = "data/Flickr2K"
+    folder_path = "../data/Flickr2K"
     input_height, input_width = 256, 256
     (synthetic_train, synthetic_val), (clean_train, clean_val) = load_and_preprocess_images(folder_path, target_size=(input_height, input_width))
 
@@ -89,8 +90,3 @@ def main(args):
 if __name__ == "__main__":
     args = parseArguments()
     main(args)
-
-    
-
-
-

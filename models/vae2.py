@@ -5,7 +5,7 @@ from math import exp, sqrt
 
 class VAE1(tf.keras.Model):
     def __init__(self, input_size, latent_size=1024):
-        # super(VAE, self).__init__()
+        super(VAE1, self).__init__()
         # 1. Encoder
         # 2. Latent Distribution, which includes: Mean Vector & Standard Deviation Vector
         # 3. Sampled Latent Representation

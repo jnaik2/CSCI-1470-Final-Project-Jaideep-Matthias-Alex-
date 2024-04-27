@@ -10,14 +10,13 @@ class VAE1(tf.keras.Model):
         # 2. Latent Distribution, which includes: Mean Vector & Standard Deviation Vector
         # 3. Sampled Latent Representation
         # 4. Decoder
-        self.input_size = input_size  # H*W (28 * 28)
+        self.input_size = input_size*3  # H*W (28 * 28)
         self.latent_size = latent_size  # Z
         self.hidden_dim = 512  # H_d
         self.encoder = Sequential(
             [
                 Flatten(),
-                Conv2D(32, kernel_size=3, strides=2, activation='relu'),
-
+                # Conv2D(32, kernel_size=3, strides=2, activation='relu'),
                 Dense(self.hidden_dim, activation='relu'),
                 Dense(self.hidden_dim, activation='relu'),
                 Dense(self.hidden_dim, activation='relu'),
@@ -34,7 +33,7 @@ class VAE1(tf.keras.Model):
             Dense(self.hidden_dim, activation='relu'),
             Dense(self.input_size, activation='sigmoid'),
             # make one layer that reshapes to MNIST (1, 28, 28)
-            Reshape((1, 28, 28))
+            Reshape((256, 256, 3))
             # Reshape((-1, 28, 28))
         ])
 
@@ -57,6 +56,26 @@ class VAE1(tf.keras.Model):
         z = reparametrize(mu, logvar)
         x_hat = self.decoder(z)
         return x_hat, mu, logvar
+    
+    def loss_function(self, x_hat, x, mu, logvar):
+        """
+        Computes the negative variational lower bound loss term of the VAE (refer to formulation in notebook).
+        Returned loss is the average loss per sample in the current batch.
+
+        Inputs:
+        - x_hat: Reconstructed input data of shape (N, 1, H, W)
+        - x: Input data for this timestep of shape (N, 1, H, W)
+        - mu: Matrix representing estimated posterior mu (N, Z), with Z latent space dimension
+        - logvar: Matrix representing estimated variance in log-space (N, Z), with Z latent space dimension
+        
+        Returns:
+        - loss: Tensor containing the scalar loss for the negative variational lowerbound
+        """
+        # find each loss
+        rec_loss = bce_function(x_hat, x)
+        kl_loss = -0.5 * tf.reduce_sum(1 + logvar - tf.square(mu) - tf.exp(logvar))
+        loss = tf.reduce_mean(rec_loss + kl_loss)
+        return loss
     
 def reparametrize(mu, logvar):
     """
@@ -112,25 +131,7 @@ def bce_function(x_hat, x):
     return reconstruction_loss
 
 
-def loss_function(self, x_hat, x, mu, logvar):
-    """
-    Computes the negative variational lower bound loss term of the VAE (refer to formulation in notebook).
-    Returned loss is the average loss per sample in the current batch.
 
-    Inputs:
-    - x_hat: Reconstructed input data of shape (N, 1, H, W)
-    - x: Input data for this timestep of shape (N, 1, H, W)
-    - mu: Matrix representing estimated posterior mu (N, Z), with Z latent space dimension
-    - logvar: Matrix representing estimated variance in log-space (N, Z), with Z latent space dimension
-    
-    Returns:
-    - loss: Tensor containing the scalar loss for the negative variational lowerbound
-    """
-    # find each loss
-    rec_loss = bce_function(x_hat, x)
-    kl_loss = -0.5 * tf.reduce_sum(1 + logvar - tf.square(mu) - tf.exp(logvar))
-    loss = tf.reduce_mean(rec_loss + kl_loss)
-    return loss
     
 
     
