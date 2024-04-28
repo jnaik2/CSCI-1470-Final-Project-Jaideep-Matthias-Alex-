@@ -129,6 +129,9 @@ class Pix2PixModel(keras.Model):
         self.LAMBDA = 100
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
+    def encode(self, x):
+       return tf.keras.Sequential(self.encoder)(x)
+
     @tf.function
     def train_step(self, input_image, target, step):
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
@@ -175,5 +178,5 @@ class Pix2PixModel(keras.Model):
         # example_input, example_target = next(iter(test_ds.take(1)))
 
         for step, (input_image, target) in train_ds.repeat().take(steps).enumerate():
-            g_loss, d_loss = self.train_function(input_image, target, step)
+            g_loss, d_loss = self.train_step(input_image, target, step)
             print(f"Step Number: {step} \tGen Loss: {g_loss:.6f} \tDiscriminator Loss: {d_loss:.6f}")

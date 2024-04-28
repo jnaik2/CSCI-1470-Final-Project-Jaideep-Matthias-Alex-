@@ -1,9 +1,11 @@
-from ..preprocessing import load_and_preprocess_images
+from preprocessing import load_and_preprocess_images
 import argparse
 from vae1 import VAE1
 from mapping import Translation
 import tensorflow as tf
 from pix2pix import Pix2PixModel
+import os
+
 IMAGE_DIM = 256
 
 
@@ -11,7 +13,7 @@ def parseArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--is_cvae", action="store_true")
     parser.add_argument("--load_weights", action="store_true")
-    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--num_epochs", type=int, default=10)
     parser.add_argument("--latent_size", type=int, default=1024)
     parser.add_argument("--input_size", type=int, default= 256 * 256)
@@ -56,9 +58,11 @@ def train_translation_epoch(translation_model, vae1_model, vae2_model, zipped_da
     optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=args.learning_rate)
     for synethetic, clean in zipped_data:
         with tf.GradientTape() as tape:
-            latent_input = vae1_model.encoder(synethetic)
-            latent_output = vae2_model.encoder(clean)
+            latent_input = vae1_model.encode(synethetic)
+            latent_output = vae2_model.encode(clean)
             predicted_output = translation_model(latent_input)
+            print(latent_output.shape)
+            print(predicted_output.shape)
             loss = translation_model.loss_function(predicted_output, latent_output)
         gradients = tape.gradient(loss, translation_model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, translation_model.trainable_variables))
@@ -73,17 +77,23 @@ def train_translation(translation_model, vae1_model, vae2_model, synthetic_train
 
 
 def main(args):
-    folder_path = "data/Flickr2K"
+    folder_path = "../data/Flickr2K"
     (synthetic_train, synthetic_val), (clean_train, clean_val) = load_and_preprocess_images(folder_path, target_size=(IMAGE_DIM, IMAGE_DIM))
     use_pix = True
+
+    synthetic_train = tf.data.Dataset.from_tensor_slices((synthetic_train, synthetic_train))
+    clean_train = tf.data.Dataset.from_tensor_slices((clean_train, clean_train))
+
+    synthetic_train = synthetic_train.batch(args.batch_size)
+    clean_train = clean_train.batch(args.batch_size)
     
     if use_pix:
         pix2pix_model_1 = Pix2PixModel()
-        Translation_model = Translation(input_size=IMAGE_DIM**2, latent_size=1024)
+        Translation_model = Translation(input_size=IMAGE_DIM**2, latent_size=512)
         pix2pix_model_2 = Pix2PixModel()
 
-        pix2pix_model_1.fit(synthetic_train, clean_train)
-        pix2pix_model_2.fit(clean_train, synthetic_train)
+        pix2pix_model_1.fit(synthetic_train, clean_train, 5)
+        pix2pix_model_2.fit(clean_train, synthetic_train, 5)
 
         train_translation(Translation_model, pix2pix_model_1, pix2pix_model_2, synthetic_train, clean_train, args)
 
