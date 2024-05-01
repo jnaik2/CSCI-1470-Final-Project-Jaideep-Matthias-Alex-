@@ -19,6 +19,8 @@ class ResNetBlock(tf.keras.Model):
             LeakyReLU(0.3),
             Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
             BatchNormalization(),
+            Flatten(),
+            Dense(latent_size),
             Reshape((1, 1, latent_size))
         ]
 
@@ -39,8 +41,10 @@ class ResNetBlock(tf.keras.Model):
         - mu: Matrix representing estimated posterior mu (N, Z), with Z latent space dimension
         - logvar: Matrix representing estimataed variance in log-space (N, Z), with Z latent space dimension
         """
-        
-        return x + self.conv_block(x)
+        print(x.shape)
+        y = self.conv_block(x)
+        print(y.shape)
+        return x + y
     
     def loss_function(self, latent_result, latent_target):
         """
@@ -58,5 +62,7 @@ class ResNetBlock(tf.keras.Model):
         """
         # find each loss
         # what is the loss function here?
+        print("target", latent_target)
+        print("result", latent_result)
         return tf.reduce_mean(tf.keras.losses.MSE(latent_target, latent_result))
 

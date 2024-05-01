@@ -1,4 +1,4 @@
-from models.resnet import ResNetBlock
+from resnet import ResNetBlock
 from preprocessing import load_and_preprocess_images
 import argparse
 from vae1 import VAE1
@@ -103,7 +103,7 @@ def main(args):
 
         res = pix2pix_model_1.predict(synthetic_val)
         res2 = pix2pix_model_2.predict(clean_val)
-        res3 = pix2pix_model_2.decode(Translation_model(pix2pix_model_1.encode(synthetic_val)))
+        res3 = pix2pix_model_2.decode(Resnet_model(pix2pix_model_1.encode(synthetic_val)))
         for i in range(10):
             cv2.imshow('syn', synthetic_val[i])
             cv2.imshow('rec syn', res[i].numpy())
