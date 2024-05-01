@@ -47,7 +47,7 @@ def load_and_preprocess_images(folder_path, target_size=(256, 256), normalize=Tr
         # cv2.imshow('synthetic image', syn_img)
         # cv2.waitKey(0)
         i+=1
-        if i == 100:
+        if i == 250:
             break
 
     clean_images = np.array(clean_images)

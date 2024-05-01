@@ -1,5 +1,5 @@
 import keras
-from keras.layers import Sequential
+from keras import Sequential
 import tensorflow as tf
 import time
 class GANEncoder(tf.keras.Model):

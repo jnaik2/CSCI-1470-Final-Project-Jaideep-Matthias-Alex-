@@ -3,7 +3,7 @@ from keras import Sequential
 from keras.layers import Dense, Flatten, Reshape, Conv2D, Dropout, BatchNormalization, LeakyReLU
 from math import exp, sqrt
 
-from models.resnet import ResNetBlock
+from resnet import ResNetBlock
 
 class Translation(tf.keras.Model):
     def __init__(self, input_size, latent_size=512, num_filters=64):
@@ -64,6 +64,8 @@ class Translation(tf.keras.Model):
             Dense(latent_size),
             Reshape((1, 1, latent_size))
         ]
+
+        return Sequential(model)
 
     def call(self, x):
         """

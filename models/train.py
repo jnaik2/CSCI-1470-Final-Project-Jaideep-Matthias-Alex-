@@ -16,7 +16,7 @@ def parseArguments():
     parser.add_argument("--is_cvae", action="store_true")
     parser.add_argument("--load_weights", action="store_true")
     parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--num_epochs", type=int, default=10)
+    parser.add_argument("--num_epochs", type=int, default=50)
     parser.add_argument("--latent_size", type=int, default=1024)
     parser.add_argument("--input_size", type=int, default= 256 * 256)
     parser.add_argument("--learning_rate", type=float, default=1e-3)
@@ -60,8 +60,8 @@ def train_translation_epoch(translation_model, vae1_model, vae2_model, zipped_da
     optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=args.learning_rate)
     for synethetic, clean in zipped_data:
         with tf.GradientTape() as tape:
-            latent_input = vae1_model.encode(synethetic)
-            latent_output = vae2_model.encode(clean)
+            latent_input, _ = vae1_model.encode(synethetic)
+            latent_output, _ = vae2_model.encode(clean)
             predicted_output = translation_model(latent_input)
             # print(latent_output.shape)
             # print(predicted_output.shape)
@@ -93,15 +93,15 @@ def main(args):
         pix2pix_model_1 = Pix2PixModel()
         Translation_model = Translation(input_size=IMAGE_DIM**2, latent_size=512)
         pix2pix_model_2 = Pix2PixModel()
-
-        pix2pix_model_1.fit(synthetic_train, clean_train, 25)
-        pix2pix_model_2.fit(clean_train, synthetic_train, 25)
+        pix2pix_model_1.fit(synthetic_train, clean_train, 50)
+        pix2pix_model_2.fit(clean_train, synthetic_train, 50)
 
         train_translation(Translation_model, pix2pix_model_1, pix2pix_model_2, synthetic_train, clean_train, args)
 
         res = pix2pix_model_1.predict(synthetic_val)
         res2 = pix2pix_model_2.predict(clean_val)
-        res3 = pix2pix_model_2.decode(Translation_model(pix2pix_model_1.encode(synthetic_val)))
+        x, skips = pix2pix_model_1.encode(synthetic_val)
+        res3 = pix2pix_model_2.decode(x, skips)
         for i in range(10):
             cv2.imshow('syn', synthetic_val[i])
             cv2.imshow('rec syn', res[i].numpy())
