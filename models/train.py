@@ -5,6 +5,7 @@ from mapping import Translation
 import tensorflow as tf
 from pix2pix import Pix2PixModel
 import os
+import cv2
 
 IMAGE_DIM = 256
 
@@ -61,8 +62,8 @@ def train_translation_epoch(translation_model, vae1_model, vae2_model, zipped_da
             latent_input = vae1_model.encode(synethetic)
             latent_output = vae2_model.encode(clean)
             predicted_output = translation_model(latent_input)
-            print(latent_output.shape)
-            print(predicted_output.shape)
+            # print(latent_output.shape)
+            # print(predicted_output.shape)
             loss = translation_model.loss_function(predicted_output, latent_output)
         gradients = tape.gradient(loss, translation_model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, translation_model.trainable_variables))
@@ -92,10 +93,23 @@ def main(args):
         Translation_model = Translation(input_size=IMAGE_DIM**2, latent_size=512)
         pix2pix_model_2 = Pix2PixModel()
 
-        pix2pix_model_1.fit(synthetic_train, clean_train, 5)
-        pix2pix_model_2.fit(clean_train, synthetic_train, 5)
+        pix2pix_model_1.fit(synthetic_train, clean_train, 25)
+        pix2pix_model_2.fit(clean_train, synthetic_train, 25)
 
         train_translation(Translation_model, pix2pix_model_1, pix2pix_model_2, synthetic_train, clean_train, args)
+
+        res = pix2pix_model_1.predict(synthetic_val)
+        res2 = pix2pix_model_2.predict(clean_val)
+        res3 = pix2pix_model_2.decode(Translation_model(pix2pix_model_1.encode(synthetic_val)))
+        for i in range(10):
+            cv2.imshow('syn', synthetic_val[i])
+            cv2.imshow('rec syn', res[i].numpy())
+            # print("VAL", synthetic_val[i])
+            # print("REC", res[i])
+            cv2.imshow('clean', clean_val[i])
+            cv2.imshow('rec clean', res2[i].numpy())
+            cv2.imshow('REC', res3[i].numpy())
+            cv2.waitKey(0)
 
     else:
         VAE1_model = VAE1(input_size=IMAGE_DIM**2, latent_size=1024)

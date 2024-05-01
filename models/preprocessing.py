@@ -6,7 +6,7 @@ from synthesize import synthesize_image, pil_to_np
 from PIL import Image
 
 
-def load_and_preprocess_images(folder_path, target_size=(32, 32), normalize=True, test_size=0.2):
+def load_and_preprocess_images(folder_path, target_size=(256, 256), normalize=True, test_size=0.2):
 
     synthetic_images = []
     clean_images = []

@@ -49,6 +49,26 @@ def Encoder():
   ]
    return down_stack
 
+def Decoder():
+    initializer = tf.random_normal_initializer(0., 0.02)
+    up_stack = [
+    upsample(512, 4, apply_dropout=True),  # (batch_size, 2, 2, 1024)
+    upsample(512, 4, apply_dropout=True),  # (batch_size, 4, 4, 1024)
+    upsample(512, 4, apply_dropout=True),  # (batch_size, 8, 8, 1024)
+    upsample(512, 4),  # (batch_size, 16, 16, 1024)
+    upsample(256, 4),  # (batch_size, 32, 32, 512)
+    upsample(128, 4),  # (batch_size, 64, 64, 256)
+    upsample(64, 4),  # (batch_size, 128, 128, 128)
+    tf.keras.layers.Conv2DTranspose(3, 4,
+                                         strides=2,
+                                         padding='same',
+                                         kernel_initializer=initializer,
+                                         activation='tanh')  # (batch_size, 256, 256, 3)
+    ]
+    return up_stack
+
+  
+
 def Generator(encoder):
   inputs = tf.keras.layers.Input(shape=[256, 256, 3])
 
@@ -122,6 +142,7 @@ class Pix2PixModel(keras.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.encoder = Encoder()
+        self.decoder = Decoder()
         self.generatorNet = Generator(self.encoder)
         self.generatorOptimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
         self.discriminatorNet = Discriminator()
@@ -131,6 +152,12 @@ class Pix2PixModel(keras.Model):
 
     def encode(self, x):
        return tf.keras.Sequential(self.encoder)(x)
+    
+    def decode(self, x):
+       return tf.keras.Sequential(self.decoder)(x)
+    
+    def predict(self, x):
+        return self.generatorNet(x, training=False)
 
     @tf.function
     def train_step(self, input_image, target, step):

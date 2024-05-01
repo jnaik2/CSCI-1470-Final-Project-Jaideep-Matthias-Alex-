@@ -4,7 +4,7 @@ from keras.layers import Dense, Flatten, Reshape, Conv2D, Dropout
 from math import exp, sqrt
 
 class Translation(tf.keras.Model):
-    def __init__(self, input_size, latent_size=1024):
+    def __init__(self, input_size, latent_size=512):
         super(Translation, self).__init__()
         # Will go from one latent space 15 to another latent space 15
         self.input_size = input_size  # H*W (28 * 28)
@@ -15,6 +15,7 @@ class Translation(tf.keras.Model):
             Dense(2048, activation='relu'),
             Dropout(0.5),
             Dense(latent_size, activation='relu'),
+            Reshape((1, 1, latent_size))
         ])
 
     def call(self, x):
