@@ -10,18 +10,18 @@ class ResNetBlock(tf.keras.Model):
         self.input_size = input_size  # H*W (28 * 28)
         self.latent_size = latent_size  # Z
 
-        self.conv_block = self.build_conv_block(num_filters, latent_size)
+        self.conv_block = self.build_conv_block(input_size=input_size, latent_size=latent_size, dim=num_filters)
 
-    def build_conv_block(self, dim, latent_size):
-        conv_block = [
+    def build_conv_block(self, input_size, latent_size, dim):
+        conv_block = []
+
+        # "ResNet Blocks"
+        conv_block += [
             Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
             BatchNormalization(), 
             LeakyReLU(0.3),
-            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"),
             BatchNormalization(),
-            Flatten(),
-            Dense(latent_size),
-            Reshape((1, 1, latent_size))
         ]
 
         return Sequential(conv_block)

@@ -1,21 +1,69 @@
 import tensorflow as tf
 from keras import Sequential
-from keras.layers import Dense, Flatten, Reshape, Conv2D, Dropout
+from keras.layers import Dense, Flatten, Reshape, Conv2D, Dropout, BatchNormalization, LeakyReLU
 from math import exp, sqrt
 
+from models.resnet import ResNetBlock
+
 class Translation(tf.keras.Model):
-    def __init__(self, input_size, latent_size=512):
+    def __init__(self, input_size, latent_size=512, num_filters=64):
         super(Translation, self).__init__()
         # Will go from one latent space 15 to another latent space 15
         self.input_size = input_size  # H*W (28 * 28)
         self.latent_size = latent_size  # Z
-        self.translation = Sequential([
+        self.translation = self.make_translation_model(latent_size, num_filters)
+        
+        
+        # Sequential([
+        #     Flatten(),
+        #     Dense(1024, activation='relu'),
+        #     Dense(2048, activation='relu'),
+        #     Dense(latent_size, activation='relu'),
+        #     Reshape((1, 1, latent_size))
+        # ])
+    
+    def make_translation_model(self, latent_size, dim):
+        model = []
+
+         # first 4 convolution layers
+        model += [
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
+            BatchNormalization(), 
+            LeakyReLU(0.3),
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
+            BatchNormalization(), 
+            LeakyReLU(0.3),
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
+            BatchNormalization(), 
+            LeakyReLU(0.3),
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
+            BatchNormalization(), 
+            LeakyReLU(0.3)
+        ]
+
+        for i in range(4):
+            model += [
+                ResNetBlock(input_size=self.input_size, latent_size=latent_size, num_filters=dim)
+            ]
+        
+        model += [
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
+            BatchNormalization(), 
+            LeakyReLU(0.3),
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
+            BatchNormalization(), 
+            LeakyReLU(0.3),
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
+            BatchNormalization(), 
+            LeakyReLU(0.3),
+        ]
+
+        model += [
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"),
             Flatten(),
-            Dense(1024, activation='relu'),
-            Dense(2048, activation='relu'),
-            Dense(latent_size, activation='relu'),
+            Dense(latent_size),
             Reshape((1, 1, latent_size))
-        ])
+        ]
 
     def call(self, x):
         """
