@@ -15,7 +15,7 @@ class ResNetBlock(tf.keras.Model):
     def build_conv_block(self, dim):
         conv_block = []
 
-        conv_block += [Conv2D(dim, kernel_size=3, strides=1, padding="same"), BatchNormalization(), ReLU()]
+        conv_block += [Conv2D(dim, kernel_size=3, strides=1, padding="same", activation="relu"), BatchNormalization(), ReLU()]
 
         return Sequential(conv_block)
 
