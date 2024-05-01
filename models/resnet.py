@@ -1,21 +1,25 @@
 import tensorflow as tf
 from keras import Sequential
-from keras.layers import Dense, Flatten, Reshape, Conv2D, Dropout
+from keras.layers import Dense, Flatten, Reshape, Conv2D, Dropout, BatchNormalization, ReLU
 from math import exp, sqrt
 
-class Translation(tf.keras.Model):
+class ResNetBlock(tf.keras.Model):
     def __init__(self, input_size, latent_size=512):
-        super(Translation, self).__init__()
+        super(ResNetBlock, self).__init__()
         # Will go from one latent space 15 to another latent space 15
         self.input_size = input_size  # H*W (28 * 28)
         self.latent_size = latent_size  # Z
-        self.translation = Sequential([
-            Flatten(),
-            Dense(1024, activation='relu'),
-            Dense(2048, activation='relu'),
-            Dense(latent_size, activation='relu'),
-            Reshape((1, 1, latent_size))
-        ])
+
+        self.conv_block = self.build_conv_block()
+
+    def build_conv_block(self, dim):
+        conv_block = []
+
+        conv_block += [Conv2D(dim, kernel_size=3, strides=1, padding="same"), BatchNormalization(), ReLU()]
+
+        return Sequential(conv_block)
+
+
 
     def call(self, x):
         """
@@ -31,7 +35,7 @@ class Translation(tf.keras.Model):
         - logvar: Matrix representing estimataed variance in log-space (N, Z), with Z latent space dimension
         """
         
-        return self.translation(x)
+        return x + self.conv_block(x)
     
     def loss_function(self, latent_result, latent_target):
         """
