@@ -1,3 +1,4 @@
+from models.resnet import ResNetBlock
 from preprocessing import load_and_preprocess_images
 import argparse
 from vae1 import VAE1
@@ -90,13 +91,15 @@ def main(args):
     
     if use_pix:
         pix2pix_model_1 = Pix2PixModel()
-        Translation_model = Translation(input_size=IMAGE_DIM**2, latent_size=512)
+        # Translation_model = Translation(input_size=IMAGE_DIM**2, latent_size=512)
+        Resnet_model = ResNetBlock(input_size=IMAGE_DIM**2, latent_size=512)
         pix2pix_model_2 = Pix2PixModel()
 
         pix2pix_model_1.fit(synthetic_train, clean_train, 25)
         pix2pix_model_2.fit(clean_train, synthetic_train, 25)
 
-        train_translation(Translation_model, pix2pix_model_1, pix2pix_model_2, synthetic_train, clean_train, args)
+        # train_translation(Translation_model, pix2pix_model_1, pix2pix_model_2, synthetic_train, clean_train, args)
+        train_translation(Resnet_model, pix2pix_model_1, pix2pix_model_2, synthetic_train, clean_train, args)
 
         res = pix2pix_model_1.predict(synthetic_val)
         res2 = pix2pix_model_2.predict(clean_val)

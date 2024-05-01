@@ -1,21 +1,26 @@
 import tensorflow as tf
 from keras import Sequential
-from keras.layers import Dense, Flatten, Reshape, Conv2D, Dropout, BatchNormalization, ReLU
+from keras.layers import Dense, Flatten, Reshape, Conv2D, Dropout, BatchNormalization, ReLU, LeakyReLU
 from math import exp, sqrt
 
 class ResNetBlock(tf.keras.Model):
-    def __init__(self, input_size, latent_size=512):
+    def __init__(self, input_size, latent_size=512, num_filters=64):
         super(ResNetBlock, self).__init__()
         # Will go from one latent space 15 to another latent space 15
         self.input_size = input_size  # H*W (28 * 28)
         self.latent_size = latent_size  # Z
 
-        self.conv_block = self.build_conv_block()
+        self.conv_block = self.build_conv_block(num_filters, latent_size)
 
-    def build_conv_block(self, dim):
-        conv_block = []
-
-        conv_block += [Conv2D(dim, kernel_size=3, strides=1, padding="same", activation="relu"), BatchNormalization(), ReLU()]
+    def build_conv_block(self, dim, latent_size):
+        conv_block = [
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
+            BatchNormalization(), 
+            LeakyReLU(0.3),
+            Conv2D(filters=dim, kernel_size=3, strides=1, padding="same"), 
+            BatchNormalization(),
+            Reshape((1, 1, latent_size))
+        ]
 
         return Sequential(conv_block)
 
@@ -55,22 +60,3 @@ class ResNetBlock(tf.keras.Model):
         # what is the loss function here?
         return tf.reduce_mean(tf.keras.losses.MSE(latent_target, latent_result))
 
-
-def bce_function(x_hat, x):
-    """
-    Computes the reconstruction loss of the VAE.
-    
-    Inputs:
-    - x_hat: Reconstructed input data of shape (N, 1, H, W)
-    - x: Input data for this timestep of shape (N, 1, H, W)
-    
-    Returns:
-    - reconstruction_loss: Tensor containing the scalar loss for the reconstruction loss term.
-    """
-    bce_fn = tf.keras.losses.BinaryCrossentropy(
-        from_logits=False,
-        reduction=tf.keras.losses.Reduction.SUM,
-    )
-    reconstruction_loss = bce_fn(x, x_hat) * x.shape[
-        -1]  # Sum over all loss terms for each data point. This looks weird, but we need this to work...
-    return reconstruction_loss
