@@ -65,4 +65,5 @@ class ResNetBlock(tf.keras.Model):
         print("target", latent_target)
         print("result", latent_result)
         return tf.reduce_mean(tf.keras.losses.MSE(latent_target, latent_result))
+        # return tf.reduce_mean(tf.keras.losses.MSE(latent_target, latent_result))
 

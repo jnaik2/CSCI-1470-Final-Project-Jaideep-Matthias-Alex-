@@ -1,6 +1,64 @@
 import keras
+from keras.layers import Sequential
 import tensorflow as tf
 import time
+class GANEncoder(tf.keras.Model):
+    def __init__(self):
+        super(GANEncoder, self).__init__()
+        self.down_stack = [
+          downsample(64, 4, apply_batchnorm=False),  # (batch_size, 128, 128, 64)
+          downsample(128, 4),  # (batch_size, 64, 64, 128)
+          downsample(256, 4),  # (batch_size, 32, 32, 256)
+          downsample(512, 4),  # (batch_size, 16, 16, 512)
+          downsample(512, 4),  # (batch_size, 8, 8, 512)
+          downsample(512, 4),  # (batch_size, 4, 4, 512)
+          downsample(512, 4),  # (batch_size, 2, 2, 512)
+          downsample(512, 4),  # (batch_size, 1, 1, 512)
+      ]
+        
+    def call(self, x):
+        skips = []
+        # call each downsample model on the input x
+        for down in self.down_stack:
+            x = down(x)
+            skips.append(x)
+        skips = reversed(skips[:-1])
+        # return the encoding and the skip
+        return x, skips
+   
+class GANDecoder(tf.keras.Model):
+    def __init__(self):
+        super(GANDecoder, self).__init__()
+        self.up_stack = [
+          upsample(512, 4, apply_dropout=True),  # (batch_size, 2, 2, 1024)
+          upsample(512, 4, apply_dropout=True),  # (batch_size, 4, 4, 1024)
+          upsample(512, 4, apply_dropout=True),  # (batch_size, 8, 8, 1024)
+          upsample(512, 4),  # (batch_size, 16, 16, 1024)
+          upsample(256, 4),  # (batch_size, 32, 32, 512)
+          upsample(128, 4),  # (batch_size, 64, 64, 256)
+          upsample(64, 4),  # (batch_size, 128, 128, 128)
+      ]
+        self.last = tf.keras.layers.Conv2DTranspose(3, 4, strides=2, padding='same',
+                                         kernel_initializer=tf.random_normal_initializer(0., 0.02),
+                                         activation='tanh')  # (batch_size, 256, 256, 3)
+        
+    def call(self, x, skips):
+        for up, skip in zip(self.up_stack, skips):
+            x = up(x)
+            x = tf.keras.layers.Concatenate()([x, skip])
+        x = self.last(x)
+        return x
+   
+class GANGenerator(tf.keras.Model):
+  def __init__(self, encoder, decoder):
+    super(GANGenerator, self).__init__()
+    self.encoder = encoder
+    self.decoder = decoder
+  
+  def call(self, x):
+     latent_vector, skips = self.encoder(x)
+     return self.decoder(latent_vector, skips)
+
 
 def downsample(filters, size, apply_batchnorm=True):
   initializer = tf.random_normal_initializer(0., 0.02)
@@ -141,9 +199,22 @@ def Discriminator():
 class Pix2PixModel(keras.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.encoder = Encoder()
-        self.decoder = Decoder()
-        self.generatorNet = Generator(self.encoder)
+        # self.encoder = Encoder()
+        # self.decoder = Decoder()
+        # self.generatorLast = tf.keras.layers.Conv2DTranspose(3, 4,
+        #                                  strides=2,
+        #                                  padding='same',
+        #                                  kernel_initializer=tf.random_normal_initializer(0., 0.02),
+        #                                  activation='tanh')  # (batch_size, 256, 256, 3)
+        # self.generatorNet = Generator(self.encoder)
+        # self.generatorOptimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+        # self.discriminatorNet = Discriminator()
+        # self.discriminatorOptimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+        # self.LAMBDA = 100
+        # self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+        self.encoder = GANEncoder()
+        self.decoder = GANDecoder()
+        self.generatorNet = GANGenerator(self.encoder, self.decoder)
         self.generatorOptimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
         self.discriminatorNet = Discriminator()
         self.discriminatorOptimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
@@ -151,10 +222,10 @@ class Pix2PixModel(keras.Model):
         self.loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
     def encode(self, x):
-       return tf.keras.Sequential(self.encoder)(x)
+        return self.encoder(x)
     
-    def decode(self, x):
-       return tf.keras.Sequential(self.decoder)(x)
+    def decode(self, x, skips):
+        return self.decoder(x, skips)
     
     def predict(self, x):
         return self.generatorNet(x, training=False)
