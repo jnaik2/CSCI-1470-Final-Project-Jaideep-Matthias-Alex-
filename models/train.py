@@ -89,6 +89,7 @@ def main(args):
     folder_path = "../data/Flickr2K"
     (synthetic_train, synthetic_val), (clean_train, clean_val) = load_and_preprocess_images(folder_path, target_size=(IMAGE_DIM, IMAGE_DIM))
     use_pix = True
+    use_save = False
 
     synthetic_train = tf.data.Dataset.from_tensor_slices((synthetic_train, synthetic_train))
     clean_train = tf.data.Dataset.from_tensor_slices((clean_train, clean_train))
@@ -100,10 +101,18 @@ def main(args):
         pix2pix_model_1 = Pix2PixModel()
         Translation_model = Translation(input_size=IMAGE_DIM**2, latent_size=512)
         pix2pix_model_2 = Pix2PixModel()
-        pix2pix_model_1.fit(synthetic_train, clean_train, 50)
-        pix2pix_model_2.fit(clean_train, synthetic_train, 50)
-
-        train_translation(Translation_model, pix2pix_model_1, pix2pix_model_2, synthetic_train, clean_train, args)
+        
+        if not use_save:
+            pix2pix_model_1.fit(synthetic_train, clean_train, 50)
+            pix2pix_model_2.fit(clean_train, synthetic_train, 50)
+            train_translation(Translation_model, pix2pix_model_1, pix2pix_model_2, synthetic_train, clean_train, args)
+            pix2pix_model_1.save_weights("CSCI-1470-Final-Project-Jaideep-Matthias-Alex-/misc/modelweights1")
+            pix2pix_model_2.save_weights("CSCI-1470-Final-Project-Jaideep-Matthias-Alex-/misc/modelweights2")
+            Translation_model.save_weights("CSCI-1470-Final-Project-Jaideep-Matthias-Alex-/misc/modelweights3")
+        else:
+            pix2pix_model_1.load_weights("CSCI-1470-Final-Project-Jaideep-Matthias-Alex-/misc/modelweights1")
+            pix2pix_model_2.load_weights("CSCI-1470-Final-Project-Jaideep-Matthias-Alex-/misc/modelweights2")
+            Translation_model.load_weights("CSCI-1470-Final-Project-Jaideep-Matthias-Alex-/misc/modelweights3")
 
         res = pix2pix_model_1.predict(synthetic_val)
         res2 = pix2pix_model_2.predict(clean_val)
