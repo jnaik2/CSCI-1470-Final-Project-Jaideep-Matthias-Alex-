@@ -1,6 +1,7 @@
 from resnet import ResNetBlock
 from preprocessing import load_and_preprocess_images
 import argparse
+import numpy as np
 from vae1 import VAE1
 from mapping import Translation
 import tensorflow as tf
@@ -22,6 +23,12 @@ def parseArguments():
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     args = parser.parse_args()
     return args
+
+def gamma_correction(image, gamma=1.0):
+    inv_gamma = 1.0 / gamma
+    table = np.array([((i / 255.0) ** inv_gamma) * 255
+                      for i in np.arange(0, 256)]).astype("uint8")
+    return cv2.LUT(image, table)
 
 def train_vae_epoch(model, dataset, args):
     """
@@ -104,11 +111,11 @@ def main(args):
         res3 = pix2pix_model_2.decode(x, skips)
         for i in range(10):
             cv2.imshow('syn', synthetic_val[i])
-            cv2.imshow('rec syn', res[i].numpy())
+            cv2.imshow('rec syn', gamma_correction(res[i].numpy()))
             # print("VAL", synthetic_val[i])
             # print("REC", res[i])
             cv2.imshow('clean', clean_val[i])
-            cv2.imshow('rec clean', res2[i].numpy())
+            cv2.imshow('rec clean', gamma_correction(res2[i].numpy()))
             cv2.imshow('REC', res3[i].numpy())
             cv2.waitKey(0)
 
