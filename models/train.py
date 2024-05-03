@@ -6,6 +6,7 @@ from vae1 import VAE1
 from mapping import Translation
 import tensorflow as tf
 from pix2pix import Pix2PixModel
+from skimage import exposure
 import os
 import cv2
 
@@ -29,6 +30,15 @@ def gamma_correction(image, gamma=1.0):
     table = np.array([((i / 255.0) ** inv_gamma) * 255
                       for i in np.arange(0, 256)]).astype("uint8")
     return cv2.LUT(image, table)
+
+def gamma_correction_rgb(image, gamma=2.2):
+    # Convert the image to a linear color space
+    linear_image = exposure.adjust_gamma(image, 1/gamma)
+    
+    # Apply gamma correction to the linear image
+    corrected_image = exposure.adjust_gamma(linear_image, gamma)
+    
+    return corrected_image
 
 def train_vae_epoch(model, dataset, args):
     """
@@ -120,12 +130,12 @@ def main(args):
         res3 = pix2pix_model_2.decode(x, skips)
         for i in range(10):
             cv2.imshow('syn', synthetic_val[i])
-            cv2.imshow('rec syn', gamma_correction(res[i].numpy()))
+            cv2.imshow('rec syn', gamma_correction_rgb(res[i].numpy()))
             # print("VAL", synthetic_val[i])
             # print("REC", res[i])
             cv2.imshow('clean', clean_val[i])
-            cv2.imshow('rec clean', gamma_correction(res2[i].numpy()))
-            cv2.imshow('REC', res3[i].numpy())
+            cv2.imshow('rec clean', gamma_correction_rgb(res2[i].numpy()))
+            cv2.imshow('REC', gamma_correction_rgb(res3[i].numpy()))
             cv2.waitKey(0)
 
     else:
